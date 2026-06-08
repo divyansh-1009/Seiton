@@ -18,7 +18,6 @@ type VisionClient struct {
 }
 
 // NewVisionClient creates a new VisionClient.
-// Default BaseURL could be "http://localhost:5000"
 func NewVisionClient(baseURL string) *VisionClient {
 	return &VisionClient{
 		BaseURL:    baseURL,

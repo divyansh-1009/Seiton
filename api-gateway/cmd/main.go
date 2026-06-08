@@ -18,13 +18,10 @@ func main() {
 	// 1. Read Configuration
 	pythonVisionURL := os.Getenv("VISION_SERVICE_URL")
 	if pythonVisionURL == "" {
-		pythonVisionURL = "http://localhost:5000" // Default for local perception microservice
+		pythonVisionURL = "http://localhost:6000" 
 	}
 
-	cppBinaryPath := os.Getenv("ENGINE_BINARY_PATH")
-	if cppBinaryPath == "" {
-		cppBinaryPath = "../optimization/build/optimization_engine" // Default relative path to C++ binary
-	}
+	cppBinaryPath := "../optimization/build/optimization_engine"
 
 	port := os.Getenv("PORT")
 	if port == "" {

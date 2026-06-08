@@ -58,6 +58,12 @@ type StepData struct {
 	Step              int               `json:"step"`
 	ItemID            string            `json:"item_id"`
 	TargetCoordinates TargetCoordinates `json:"target_coordinates"`
+
+	// Enriched fields for Three.js frontend
+	ID               string    `json:"id"`
+	Size             []float64 `json:"size"`
+	SourceCoordinate []float64 `json:"source_coordinate"`
+	TargetCoordinate []float64 `json:"target_coordinate"`
 }
 
 type TargetCoordinates struct {

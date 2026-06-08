@@ -29,3 +29,7 @@ target_include_directories(seiton_engine PUBLIC
 
 # Link JSON library to seiton_engine
 target_link_libraries(seiton_engine PUBLIC nlohmann_json::nlohmann_json)
+
+# Add the main executable
+add_executable(optimization_engine src/main.cpp)
+target_link_libraries(optimization_engine PRIVATE seiton_engine)
