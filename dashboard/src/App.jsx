@@ -21,7 +21,7 @@ function App() {
       formData.append('max_w_cm', '80');
       formData.append('max_h_cm', '100');
 
-      const response = await fetch('http://localhost:8081/api/v1/pack', {
+      const response = await fetch('http://localhost:8080/api/v1/pack', {
         method: 'POST',
         body: formData,
       });
