@@ -9,19 +9,27 @@ function App() {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [executionMatrix, setExecutionMatrix] = useState([]);
 
-  const handleFileUpload = async (file) => {
+  const [packMode, setPackMode] = useState('bulk');
+
+  const handleFileUpload = async (file, mode, config = {}) => {
     setUploadedFile(file);
+    setPackMode(mode);
     setScreen('processing');
     
     try {
       const formData = new FormData();
-      formData.append('image', file);
-      // Hardcode container dimensions for now, or you could add inputs in IngressScreen
-      formData.append('max_l_cm', '120');
-      formData.append('max_w_cm', '80');
-      formData.append('max_h_cm', '100');
+      if (file) {
+        formData.append('image', file);
+      }
+      formData.append('max_l_cm', config.containerL || '120');
+      formData.append('max_w_cm', config.containerW || '80');
+      formData.append('max_h_cm', config.containerH || '100');
+      formData.append('pack_mode', mode);
+      if (mode === 'bulk') {
+        formData.append('num_boxes', config.numBoxes || '20');
+      }
 
-      const response = await fetch('http://localhost:8080/api/v1/pack', {
+      const response = await fetch('http://localhost:8081/api/v1/pack', {
         method: 'POST',
         body: formData,
       });
@@ -47,7 +55,7 @@ function App() {
     <main className="app-shell">
       {screen === 'ingress' && <IngressScreen onFileUpload={handleFileUpload} />}
       {screen === 'processing' && <ProcessingScreen />}
-      {screen === 'twin' && <DigitalTwinScreen uploadedFile={uploadedFile} executionMatrix={executionMatrix} />}
+      {screen === 'twin' && <DigitalTwinScreen uploadedFile={uploadedFile} executionMatrix={executionMatrix} packMode={packMode} />}
     </main>
   );
 }

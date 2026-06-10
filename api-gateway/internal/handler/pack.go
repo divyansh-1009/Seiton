@@ -49,22 +49,41 @@ func (h *PackHandler) HandlePackRequest(w http.ResponseWriter, r *http.Request) 
 		MaxH: maxH,
 	}
 
-	// 2. Extract the image file from the request
-	file, header, err := r.FormFile("image")
-	if err != nil {
-		http.Error(w, `{"error": "Missing or invalid 'image' file in request"}`, http.StatusBadRequest)
-		return
+	packMode := r.FormValue("pack_mode")
+	if packMode == "" {
+		packMode = "bulk" // default
 	}
-	defer file.Close()
 
-	imageBytes, err := io.ReadAll(file)
-	if err != nil {
-		http.Error(w, `{"error": "Failed to read image file content"}`, http.StatusInternalServerError)
-		return
+	numBoxesStr := r.FormValue("num_boxes")
+	numBoxes := 20
+	if numBoxesStr != "" {
+		if parsed, err := strconv.Atoi(numBoxesStr); err == nil && parsed > 0 {
+			numBoxes = parsed
+		}
+	}
+
+	// 2. Extract the image file from the request (optional for bulk mode)
+	var imageBytes []byte
+	var filename string
+
+	if packMode != "bulk" {
+		file, header, err := r.FormFile("image")
+		if err != nil {
+			http.Error(w, `{"error": "Missing or invalid 'image' file in request for incremental mode"}`, http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
+
+		imageBytes, err = io.ReadAll(file)
+		if err != nil {
+			http.Error(w, `{"error": "Failed to read image file content"}`, http.StatusInternalServerError)
+			return
+		}
+		filename = header.Filename
 	}
 
 	// 3. Call the Orchestrator service to handle the complex pipeline
-	matrix, err := h.orchestrator.ProcessPackagingRequest(imageBytes, header.Filename, container)
+	matrix, err := h.orchestrator.ProcessPackagingRequest(imageBytes, filename, container, packMode, numBoxes)
 	if err != nil {
 		// If it's the specific edge case for low confidence, inform the frontend cleanly
 		if strings.HasPrefix(err.Error(), "LOW_CONFIDENCE:") {

@@ -52,6 +52,7 @@ type ExecutionMatrix struct {
 	OptimizationStatus  string     `json:"optimization_status"`
 	SpaceUtilizationPct float64    `json:"space_utilization_pct"`
 	Sequence            []StepData `json:"sequence"`
+	ContainerSize       []float64  `json:"container_size"`
 }
 
 type StepData struct {

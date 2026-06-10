@@ -21,8 +21,10 @@ func main() {
 		pythonVisionURL = "http://localhost:6000" 
 	}
 
-	cppBinaryPath := "../optimization/build/optimization_engine"
-
+	cppBinaryPath := os.Getenv("ENGINE_BINARY_PATH")
+	if cppBinaryPath == "" {
+		cppBinaryPath = "../optimization/build/optimization_engine"
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
