@@ -27,6 +27,11 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 	var sequence []model.StepData
 	itemMap := make(map[string]model.Item)
 
+	// Container dimensions in cm from the request
+	containerL := container.MaxL // X-axis
+	containerW := container.MaxW // Z-axis
+	containerH := container.MaxH // Y-axis (up)
+
 	if packMode == "incremental" {
 		// Step 1: Send the unstructured items image to the Python Perception Pipeline
 		perceptionResp, err := o.visionClient.AnalyzeImage(imageBytes, filename)
@@ -95,10 +100,20 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 		for i := 0; i < numBoxes; i++ {
 			id := fmt.Sprintf("box_%03d", i+1)
 			
-			// Generate random dimensions between 10cm and 40cm
-			l := 10.0 + rand.Float64()*30.0
-			w := 10.0 + rand.Float64()*30.0
-			h := 10.0 + rand.Float64()*30.0
+			// Generate random dimensions between 10cm and 30cm (bounded to fit container)
+			maxDimL := containerL / 3.0
+			if maxDimL < 10 { maxDimL = 10 }
+			if maxDimL > 30 { maxDimL = 30 }
+			maxDimW := containerW / 3.0
+			if maxDimW < 10 { maxDimW = 10 }
+			if maxDimW > 30 { maxDimW = 30 }
+			maxDimH := containerH / 3.0
+			if maxDimH < 10 { maxDimH = 10 }
+			if maxDimH > 30 { maxDimH = 30 }
+
+			l := 10.0 + rand.Float64()*(maxDimL - 10.0)
+			w := 10.0 + rand.Float64()*(maxDimW - 10.0)
+			h := 10.0 + rand.Float64()*(maxDimH - 10.0)
 
 			item := model.Item{
 				ID:         id,
@@ -109,7 +124,7 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 					Height: h,
 				},
 				SourceCoordinates: model.Coordinates{
-					X: -50.0 + float64(i)*5.0, // Staging area
+					X: -50.0, // Staging area
 					Y: 0,
 					Z: 0,
 				},
@@ -127,36 +142,62 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 			itemMap[item.ID] = item
 		}
 
-		currentX, currentY, currentZ := 0.0, 0.0, 0.0
-		var maxHInRow float64 = 0.0
+		// Keep track of placed items to calculate support height (gravity drop)
+		type PlacedBox struct {
+			X, Y, Z float64
+			L, H, W float64
+		}
+		var placedBoxes []PlacedBox
+
+		currentX, currentZ := 0.0, 0.0
+		var maxWInRow float64 = 0.0
 
 		for i, item := range syntheticPacked {
+			// Check if this box fits in the current X-row
+			if currentX + item.L > containerL {
+				currentX = 0
+				currentZ += maxWInRow
+				maxWInRow = 0
+			}
+			// Check if this row fits in the current Z-depth
+			if currentZ + item.W > containerW {
+				// Start a new layer of rows from Z=0, Y will be calculated by gravity
+				currentX = 0
+				currentZ = 0
+				maxWInRow = 0
+			}
+
+			// Gravity drop: find the highest placed box that intersects with this one in the XZ plane
+			dropY := 0.0
+			for _, pb := range placedBoxes {
+				if currentX < pb.X+pb.L && currentX+item.L > pb.X &&
+					currentZ < pb.Z+pb.W && currentZ+item.W > pb.Z {
+					if pb.Y+pb.H > dropY {
+						dropY = pb.Y + pb.H
+					}
+				}
+			}
+
 			sequence = append(sequence, model.StepData{
 				Step:   i + 1,
 				ItemID: item.ID,
 				TargetCoordinates: model.TargetCoordinates{
 					X:           currentX,
-					Y:           currentY,
+					Y:           dropY,
 					Z:           currentZ,
 					RotationDeg: 0,
 				},
 			})
 
-			if item.H > maxHInRow {
-				maxHInRow = item.H
-			}
+			placedBoxes = append(placedBoxes, PlacedBox{
+				X: currentX, Y: dropY, Z: currentZ,
+				L: item.L, H: item.H, W: item.W,
+			})
 
-			// Simple greedy stacking logic within the user-defined container dimensions
-			currentX += item.L
-			if currentX+20 > container.MaxL {
-				currentX = 0
-				currentZ += item.W
-				if currentZ+20 > container.MaxW {
-					currentZ = 0
-					currentY += maxHInRow
-					maxHInRow = 0
-				}
+			if item.W > maxWInRow {
+				maxWInRow = item.W
 			}
+			currentX += item.L
 		}
 	}
 
@@ -164,13 +205,20 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 		OptimizationStatus:  "SUCCESS",
 		SpaceUtilizationPct: 78.5,
 		Sequence:            sequence,
+		ContainerSize:       []float64{containerL * 0.1, containerH * 0.1, containerW * 0.1},
 	}
 
-	// Step 5: Enrich execution sequence with Three.js compatible dimensions and coordinates
+	// Enrich execution sequence with Three.js compatible coordinates.
+	// Coordinate system (matching Smart-Stowage-Optimizer reference):
+	//   - Origin (0,0,0) is at the bottom-left-back corner of the container.
+	//   - X = Length (right), Y = Height (up), Z = Width (forward)
+	//   - Box position = corner-based (x, y, z), frontend adds half-size for centering.
+	//   - Scale: 1 cm = 0.1 Three.js units (so 100cm container = 10 units)
+	const scale = 0.1
+
 	for i := range executionMatrix.Sequence {
 		step := &executionMatrix.Sequence[i]
 		
-		// The mock engine returns "id", but the real engine might return "item_id".
 		lookupID := step.ItemID
 		if lookupID == "" {
 			lookupID = step.ID
@@ -180,27 +228,24 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 		if exists {
 			step.ID = lookupID
 			
-			// Scale the dimensions from cm to Three.js units:
-			// L -> scale by 10/120 = 1/12
-			// H -> scale by 6/100 = 0.06
-			// W -> scale by 8/80 = 0.1
-			scaledL := item.Dimensions.Length * (10.0 / 120.0)
-			scaledH := item.Dimensions.Height * (6.0 / 100.0)
-			scaledW := item.Dimensions.Width * (8.0 / 80.0)
-			step.Size = []float64{scaledL, scaledH, scaledW}
+			// Size in Three.js world units
+			sizeX := item.Dimensions.Length * scale
+			sizeY := item.Dimensions.Height * scale
+			sizeZ := item.Dimensions.Width * scale
+			step.Size = []float64{sizeX, sizeY, sizeZ}
 			
-			// Scale the source coordinates (conveyor staging area in Three.js):
-			// Staging center is X = -7.4, Z = 0.0
-			srcX := -7.4 + (item.SourceCoordinates.X * (10.0 / 120.0))
-			srcY := (item.SourceCoordinates.Z + item.Dimensions.Height/2.0) * (6.0 / 100.0)
-			srcZ := 0.0 + (item.SourceCoordinates.Y * (8.0 / 80.0))
-			step.SourceCoordinate = []float64{srcX, srcY, srcZ}
+			// Source coordinate (staging area, outside the container)
+			step.SourceCoordinate = []float64{
+				-5.0, // Fixed staging X position
+				sizeY / 2.0, // Sitting on the ground
+				0.0,
+			}
 			
-			// Scale the target coordinates (container packing area in Three.js):
-			// Container corner starts at X = -5.0, Y = 0.0, Z = -4.0
-			tgtX := -5.0 + (step.TargetCoordinates.X + item.Dimensions.Length/2.0) * (10.0 / 120.0)
-			tgtY := (step.TargetCoordinates.Z + item.Dimensions.Height/2.0) * (6.0 / 100.0)
-			tgtZ := -4.0 + (step.TargetCoordinates.Y + item.Dimensions.Width/2.0) * (8.0 / 80.0)
+			// Target coordinate: corner-based, scaled from cm to world units.
+			// The frontend will add half-size to get center for Three.js mesh placement.
+			tgtX := step.TargetCoordinates.X * scale
+			tgtY := step.TargetCoordinates.Y * scale // Y is up (was Z in some systems)
+			tgtZ := step.TargetCoordinates.Z * scale
 			step.TargetCoordinate = []float64{tgtX, tgtY, tgtZ}
 		}
 	}

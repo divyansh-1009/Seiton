@@ -8,6 +8,7 @@ function App() {
   const [screen, setScreen] = useState('ingress'); // 'ingress', 'processing', 'twin'
   const [uploadedFile, setUploadedFile] = useState(null);
   const [executionMatrix, setExecutionMatrix] = useState([]);
+  const [containerSize, setContainerSize] = useState([12, 10, 8]); // default [L, H, W] in Three.js units
 
   const [packMode, setPackMode] = useState('bulk');
 
@@ -29,7 +30,8 @@ function App() {
         formData.append('num_boxes', config.numBoxes || '20');
       }
 
-      const response = await fetch('http://localhost:8081/api/v1/pack', {
+      const apiBaseUrl = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8081';
+      const response = await fetch(`${apiBaseUrl}/api/v1/pack`, {
         method: 'POST',
         body: formData,
       });
@@ -43,6 +45,9 @@ function App() {
       }
 
       setExecutionMatrix(data.sequence);
+      if (data.container_size) {
+        setContainerSize(data.container_size);
+      }
       setScreen('twin');
       document.body.classList.add("digital-twin-active");
     } catch (err) {
@@ -55,9 +60,10 @@ function App() {
     <main className="app-shell">
       {screen === 'ingress' && <IngressScreen onFileUpload={handleFileUpload} />}
       {screen === 'processing' && <ProcessingScreen />}
-      {screen === 'twin' && <DigitalTwinScreen uploadedFile={uploadedFile} executionMatrix={executionMatrix} packMode={packMode} />}
+      {screen === 'twin' && <DigitalTwinScreen uploadedFile={uploadedFile} executionMatrix={executionMatrix} packMode={packMode} containerSize={containerSize} />}
     </main>
   );
 }
 
 export default App;
+

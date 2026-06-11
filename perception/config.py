@@ -1,4 +1,8 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv(".env.local")
+load_dotenv(".env")
 
 # Physical dimensions of the reference object (US Dollar Bill) in centimeters
 REFERENCE_WIDTH_CM = 15.59
