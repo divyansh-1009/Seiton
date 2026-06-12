@@ -3,9 +3,16 @@ import gsap from 'gsap';
 import HUD from './HUD';
 import DigitalTwinCanvas from './DigitalTwinCanvas';
 
-export default function DigitalTwinScreen({ uploadedFile, executionMatrix, packMode, containerSize, onBack }) {
+export default function DigitalTwinScreen({ uploadedFile, executionMatrix, packMode, containerSize, stats }) {
   const [animProgress, setAnimProgress] = useState(0);
   const [viewMode, setViewMode] = useState('assembly');
+
+  useEffect(() => {
+    document.body.classList.add("digital-twin-active");
+    return () => {
+      document.body.classList.remove("digital-twin-active");
+    };
+  }, []);
 
   useEffect(() => {
     gsap.fromTo(
@@ -44,7 +51,7 @@ export default function DigitalTwinScreen({ uploadedFile, executionMatrix, packM
         viewMode={viewMode}
         setViewMode={setViewMode}
         packMode={packMode}
-        onBack={onBack}
+        stats={stats}
       />
     </section>
   );
