@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import HUD from './HUD';
 import DigitalTwinCanvas from './DigitalTwinCanvas';
 
-export default function DigitalTwinScreen({ uploadedFile, executionMatrix, packMode, containerSize }) {
+export default function DigitalTwinScreen({ uploadedFile, executionMatrix, packMode, containerSize, onBack }) {
   const [animProgress, setAnimProgress] = useState(0);
   const [viewMode, setViewMode] = useState('assembly');
 
@@ -13,7 +13,19 @@ export default function DigitalTwinScreen({ uploadedFile, executionMatrix, packM
       { y: 32, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.9, stagger: 0.08, ease: "power2.out" }
     );
-  }, [packMode]);
+
+    if (packMode === 'bulk' || packMode === 'incremental') {
+      setAnimProgress(0);
+      gsap.to({ value: 0 }, {
+        value: 100,
+        duration: packMode === 'bulk' ? 4.5 : 2.5,
+        ease: "power1.inOut",
+        onUpdate: function() {
+          setAnimProgress(this.targets()[0].value);
+        }
+      });
+    }
+  }, [packMode, executionMatrix]);
 
   return (
     <section className="screen screen-twin" id="screen-twin">
@@ -32,6 +44,7 @@ export default function DigitalTwinScreen({ uploadedFile, executionMatrix, packM
         viewMode={viewMode}
         setViewMode={setViewMode}
         packMode={packMode}
+        onBack={onBack}
       />
     </section>
   );

@@ -30,7 +30,10 @@ function App() {
         formData.append('num_boxes', config.numBoxes || '20');
       }
 
-      const apiBaseUrl = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8081';
+      let apiBaseUrl = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8081';
+      if (apiBaseUrl.endsWith('/')) {
+        apiBaseUrl = apiBaseUrl.slice(0, -1);
+      }
       const response = await fetch(`${apiBaseUrl}/api/v1/pack`, {
         method: 'POST',
         body: formData,
@@ -56,11 +59,24 @@ function App() {
     }
   };
 
+  const handleBack = () => {
+    document.body.classList.remove("digital-twin-active");
+    setScreen('ingress');
+  };
+
   return (
     <main className="app-shell">
       {screen === 'ingress' && <IngressScreen onFileUpload={handleFileUpload} />}
       {screen === 'processing' && <ProcessingScreen />}
-      {screen === 'twin' && <DigitalTwinScreen uploadedFile={uploadedFile} executionMatrix={executionMatrix} packMode={packMode} containerSize={containerSize} />}
+      {screen === 'twin' && (
+        <DigitalTwinScreen 
+          uploadedFile={uploadedFile} 
+          executionMatrix={executionMatrix} 
+          packMode={packMode} 
+          containerSize={containerSize} 
+          onBack={handleBack} 
+        />
+      )}
     </main>
   );
 }

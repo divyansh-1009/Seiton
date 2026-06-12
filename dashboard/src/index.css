@@ -339,6 +339,29 @@ p {
   color: var(--color-base);
 }
 
+.back-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-accent);
+  background: var(--color-base);
+  color: var(--color-accent);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background: var(--color-accent);
+  color: var(--color-base);
+  transform: translateY(-0.1rem);
+}
+
 /* Timeline Slider Styles */
 .timeline-card {
   pointer-events: auto;

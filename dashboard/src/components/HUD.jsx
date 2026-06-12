@@ -1,4 +1,4 @@
-export default function HUD({ uploadedFile, executionMatrix, animProgress, setAnimProgress, viewMode, setViewMode, packMode }) {
+export default function HUD({ uploadedFile, executionMatrix, animProgress, setAnimProgress, viewMode, setViewMode, packMode, onBack }) {
   const totalBoxes = executionMatrix ? executionMatrix.length : 0;
 
   const formatCoordinate = (vector) => {
@@ -14,13 +14,18 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
   return (
     <div className="twin-overlay">
         <div className="hud hud-top">
-            <div>
-                <p className="eyebrow">Digital twin</p>
-                <div style={{marginTop: '0.5rem'}}>
-                  <span className="hud-chip">Mode: {packMode === 'incremental' ? 'Incremental' : 'Bulk'}</span>
-                  {packMode === 'bulk' && (
-                    <span className="hud-chip" style={{marginLeft: '0.5rem'}}>{totalBoxes} boxes packed</span>
-                  )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                <button className="back-btn" onClick={onBack}>
+                  ← Back
+                </button>
+                <div>
+                    <p className="eyebrow">Digital twin</p>
+                    <div style={{marginTop: '0.5rem'}}>
+                      <span className="hud-chip">Mode: {packMode === 'incremental' ? 'Incremental' : 'Bulk'}</span>
+                      {packMode === 'bulk' && (
+                        <span className="hud-chip" style={{marginLeft: '0.5rem'}}>{totalBoxes} boxes packed</span>
+                      )}
+                    </div>
                 </div>
             </div>
             <div className="hud-stack">
@@ -74,8 +79,6 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
                     <h3 id="hud-step">
                       Progress: {animProgress}%
                     </h3>
-                    <p id="hud-source">Source: {activeMove ? formatCoordinate(activeMove.source_coordinate) : "N/A"}</p>
-                    <p id="hud-target">Target: {activeMove ? formatCoordinate(activeMove.target_coordinate) : "N/A"}</p>
                   </>
                 )}
             </div>
