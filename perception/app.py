@@ -26,26 +26,27 @@ async def process_image_endpoint(image: UploadFile = File(...)):
         # Read image bytes
         image_bytes = await image.read()
         
-        # Process the image to get dimensions and coordinates
-        result = process_image(image_bytes)
+        # Process the image to get dimensions and coordinates for all boxes
+        boxes = process_image(image_bytes)
         
+        items = []
+        for idx, box in enumerate(boxes):
+            items.append({
+                "id": f"item_{idx+1:02d}",
+                "confidence": 0.95,  # Dummy high confidence for MVP
+                "dimensions": box["dimensions"],
+                "source_coordinates": box["source_coordinates"]
+            })
+            
         # Construct the response payload
-        # Note: The API Gateway expects 'items' array. We only detect 1 box in MVP.
         response_payload = {
             "session_id": session_id,
             "status": "success",
-            "item_count": 1,
-            "items": [
-                {
-                    "id": "item_01",
-                    "confidence": 0.95,  # Dummy high confidence for reference approach
-                    "dimensions": result["dimensions"],
-                    "source_coordinates": result["source_coordinates"]
-                }
-            ]
+            "item_count": len(items),
+            "items": items
         }
         
-        logger.info(f"[{session_id}] Processing successful. Dimensions: {result['dimensions']}")
+        logger.info(f"[{session_id}] Processing successful. Found {len(items)} items.")
         return JSONResponse(content=response_payload)
         
     except ValueError as ve:

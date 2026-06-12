@@ -21,29 +21,41 @@ export default function OverheadCrane({ executionMatrix, animProgress, viewMode,
     if (!executionMatrix || executionMatrix.length === 0 || viewMode === 'stress') return;
     if (packMode === 'bulk') return; // No crane animation in bulk mode
 
-    // Find the active move (step === 1 in incremental mode)
-    const move = executionMatrix.find(m => m.step === 1);
+    const t = animProgress / 100;
+    const N = executionMatrix.length;
+    const slice = 1.0 / N;
+    
+    // Find the currently active move based on time t
+    let activeIndex = Math.floor(t * N);
+    if (activeIndex >= N) activeIndex = N - 1;
+    if (activeIndex < 0) activeIndex = 0;
+    
+    const move = executionMatrix[activeIndex];
     if (!move || !move.target_coordinate) return;
 
     const src = move.source_coordinate || move.target_coordinate;
     const tgt = move.target_coordinate;
-    const t = animProgress / 100;
     const craneHeight = 7;
+
+    const startT = activeIndex * slice;
+    let localT = (t - startT) / slice;
+    if (localT < 0) localT = 0;
+    if (localT > 1) localT = 1;
 
     let posX, posY, posZ;
 
-    if (t <= 0.25) {
-      const p = t / 0.25;
+    if (localT <= 0.25) {
+      const p = localT / 0.25;
       posX = src[0];
       posY = src[1] + (craneHeight - src[1]) * p;
       posZ = src[2];
-    } else if (t <= 0.75) {
-      const p = (t - 0.25) / 0.5;
+    } else if (localT <= 0.75) {
+      const p = (localT - 0.25) / 0.5;
       posX = src[0] + (tgt[0] - src[0]) * p;
       posY = craneHeight;
       posZ = src[2] + (tgt[2] - src[2]) * p;
     } else {
-      const p = (t - 0.75) / 0.25;
+      const p = (localT - 0.75) / 0.25;
       posX = tgt[0];
       posY = craneHeight + (tgt[1] - craneHeight) * p;
       posZ = tgt[2];

@@ -68,26 +68,80 @@ export default function InstancedBoxes({ executionMatrix, animProgress, viewMode
       // Backend sends corner-based coords. We add half-size to center the mesh.
       let cornerX, cornerY, cornerZ;
 
-      if (packMode === 'incremental' && move.step === 1) {
-        // Animate the active box along the crane path
+      let boxScale = new THREE.Vector3(sizeX, sizeY, sizeZ);
+
+      if (packMode === 'incremental') {
+        const N = totalInstances;
+        const slice = 1.0 / N;
+        const startT = i * slice;
+        const endT = (i + 1) * slice;
+        
+        let localT = 0;
+        if (t <= startT) {
+           localT = 0; // Not picked up yet
+        } else if (t >= endT) {
+           localT = 1; // Already placed
+        } else {
+           localT = (t - startT) / slice; // 0 to 1 during its slice
+        }
+        
         const src = move.source_coordinate || move.target_coordinate;
         const tgt = move.target_coordinate;
-        const craneHeight = (containerSize ? containerSize[1] : 10) + 2; // above container
+        const craneHeight = (containerSize ? containerSize[1] : 10) + 2; 
 
-        if (t <= 0.25) {
-          const p = t / 0.25;
-          cornerX = src[0];
-          cornerY = src[1] + (craneHeight - src[1]) * p;
-          cornerZ = src[2];
-        } else if (t <= 0.75) {
-          const p = (t - 0.25) / 0.5;
-          cornerX = src[0] + (tgt[0] - src[0]) * p;
-          cornerY = craneHeight;
-          cornerZ = src[2] + (tgt[2] - src[2]) * p;
+        if (localT === 0) {
+           cornerX = src[0];
+           cornerY = src[1];
+           cornerZ = src[2];
+           boxScale.set(0, 0, 0); // Hide before picked up
+        } else if (localT === 1) {
+           cornerX = tgt[0];
+           cornerY = tgt[1];
+           cornerZ = tgt[2];
         } else {
-          const p = (t - 0.75) / 0.25;
+            // Animate along crane path using localT
+            if (localT <= 0.25) {
+              const p = localT / 0.25;
+              cornerX = src[0];
+              cornerY = src[1] + (craneHeight - src[1]) * p;
+              cornerZ = src[2];
+            } else if (localT <= 0.75) {
+              const p = (localT - 0.25) / 0.5;
+              cornerX = src[0] + (tgt[0] - src[0]) * p;
+              cornerY = craneHeight;
+              cornerZ = src[2] + (tgt[2] - src[2]) * p;
+            } else {
+              const p = (localT - 0.75) / 0.25;
+              cornerX = tgt[0];
+              cornerY = craneHeight + (tgt[1] - craneHeight) * p;
+              cornerZ = tgt[2];
+            }
+        }
+      } else if (packMode === 'bulk') {
+        const stagger = 0.8 / Math.max(1, totalInstances - 1);
+        const startT = i * stagger;
+        const endT = startT + 0.2;
+        
+        let p = 0;
+        if (t <= startT) p = 0;
+        else if (t >= endT) p = 1;
+        else {
+          p = (t - startT) / (endT - startT);
+          // Ease out bounce or ease out quad
+          p = 1 - Math.pow(1 - p, 3);
+        }
+
+        const tgt = move.target_coordinate;
+        const dropHeight = (containerSize ? containerSize[1] : 10) + 5;
+
+        if (p === 0) {
           cornerX = tgt[0];
-          cornerY = craneHeight + (tgt[1] - craneHeight) * p;
+          cornerY = dropHeight;
+          cornerZ = tgt[2];
+          boxScale.set(0, 0, 0); // Hide before dropping
+        } else {
+          cornerX = tgt[0];
+          cornerY = dropHeight - (dropHeight - tgt[1]) * p;
           cornerZ = tgt[2];
         }
       } else {
@@ -101,7 +155,7 @@ export default function InstancedBoxes({ executionMatrix, animProgress, viewMode
       tempMatrix.compose(
         new THREE.Vector3(cornerX + sizeX / 2, cornerY + sizeY / 2, cornerZ + sizeZ / 2),
         new THREE.Quaternion(),
-        new THREE.Vector3(sizeX, sizeY, sizeZ)
+        boxScale
       );
 
       meshRef.current.setMatrixAt(i, tempMatrix);
@@ -111,10 +165,16 @@ export default function InstancedBoxes({ executionMatrix, animProgress, viewMode
       if (viewMode === 'stress') {
         const stressRatio = stresses[i] || 0;
         tempColor.setHSL((1 - stressRatio) * 0.3, 1.0, 0.5);
-      } else if (packMode === 'incremental' && move.step === 0) {
-        tempColor.copy(COLORS.prefill);
-      } else if (packMode === 'incremental' && move.step === 1) {
-        tempColor.copy(COLORS.active);
+      } else if (packMode === 'incremental') {
+         const N = totalInstances;
+         const slice = 1.0 / N;
+         const startT = i * slice;
+         const endT = (i + 1) * slice;
+         if (t >= startT && t <= endT && t < 1.0) {
+             tempColor.copy(COLORS.active);
+         } else {
+             tempColor.copy(PALETTE[i % PALETTE.length]);
+         }
       } else {
         tempColor.copy(PALETTE[i % PALETTE.length]);
       }

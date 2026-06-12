@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Export compile_commands.json for editor/LSP support
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Fetch nlohmann/json dependency at build time
 include(FetchContent)
 FetchContent_Declare(
