@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/go-chi/chi/v5"
@@ -20,16 +21,20 @@ func main() {
 	godotenv.Load(".env.local")
 	godotenv.Load(".env") // Fallback to .env
 
-	pythonVisionURL := os.Getenv("VISION_SERVICE_URL")
+	pythonVisionURL := os.Getenv("PERCEPTION_URL")
 	if pythonVisionURL == "" {
-		pythonVisionURL = "http://localhost:6000" 
+		perceptionPort := os.Getenv("PERCEPTION_PORT")
+		if perceptionPort == "" {
+			perceptionPort = "6000"
+		}
+		pythonVisionURL = "http://localhost:" + perceptionPort
 	}
 
 	cppBinaryPath := os.Getenv("ENGINE_BINARY_PATH")
 	if cppBinaryPath == "" {
 		cppBinaryPath = "../optimization/build/optimization_engine"
 	}
-	port := os.Getenv("PORT")
+	port := os.Getenv("API_GATEWAY_PORT")
 	if port == "" {
 		port = "8081"
 	}
@@ -55,8 +60,16 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	// Enable CORS for the Three.js Frontend
+	allowedOrigins := []string{"*"}
+	if envOrigins := os.Getenv("ALLOWED_ORIGINS"); envOrigins != "" {
+		allowedOrigins = strings.Split(envOrigins, ",")
+		for i := range allowedOrigins {
+			allowedOrigins[i] = strings.TrimSpace(allowedOrigins[i])
+		}
+	}
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"*"}, // In production, restrict this to the frontend domain
+		AllowedOrigins: allowedOrigins,
 		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
 	}))

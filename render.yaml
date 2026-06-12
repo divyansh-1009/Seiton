@@ -1,0 +1,32 @@
+services:
+  # 1. Python Perception Service
+  - type: web
+    name: seiton-perception
+    plan: free
+    env: python
+    rootDir: perception
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: REFERENCE_WIDTH_CM
+        value: 15.59
+      - key: REFERENCE_HEIGHT_CM
+        value: 6.63
+      - key: DEFAULT_BOX_HEIGHT_CM
+        value: 15.0
+
+  # 2. Go API Gateway (Docker service packaging C++ Engine and Go binary)
+  # Deployed as a Web Service (web) on the Free tier
+  - type: web
+    name: seiton
+    plan: free
+    env: docker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    envVars:
+      - key: API_GATEWAY_PORT
+        value: 8081
+      - key: PERCEPTION_URL
+        value: https://seiton-perception.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://seiton-pi.vercel.app

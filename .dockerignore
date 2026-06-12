@@ -1,0 +1,10 @@
+# Exclude build artifacts and caches from Docker build context
+optimization/build/
+api-gateway/build_test
+api-gateway/api-gateway
+perception/venv/
+perception/__pycache__/
+.git/
+.env.local
+.env
+.DS_Store
