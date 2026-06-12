@@ -82,6 +82,7 @@ func main() {
 
 	// The primary endpoint for the digital twin integration
 	r.Post("/api/v1/pack", packHandler.HandlePackRequest)
+	r.Get("/api/v1/config", packHandler.HandleConfigGet)
 
 	// 7. Start the server
 	log.Printf("Starting Seiton API Gateway on port :%s", port)

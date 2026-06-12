@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -34,13 +35,13 @@ func (h *PackHandler) HandlePackRequest(w http.ResponseWriter, r *http.Request) 
 
 	// Set sensible defaults if not explicitly provided by the frontend
 	if maxL == 0 {
-		maxL = 120.0
+		maxL = getEnvFloat("DEFAULT_CONTAINER_L", 60.0)
 	}
 	if maxW == 0 {
-		maxW = 80.0
+		maxW = getEnvFloat("DEFAULT_CONTAINER_W", 40.0)
 	}
 	if maxH == 0 {
-		maxH = 100.0
+		maxH = getEnvFloat("DEFAULT_CONTAINER_H", 50.0)
 	}
 
 	container := model.Container{
@@ -106,4 +107,24 @@ func (h *PackHandler) HandlePackRequest(w http.ResponseWriter, r *http.Request) 
 	if err := json.NewEncoder(w).Encode(matrix); err != nil {
 		http.Error(w, `{"error": "Failed to encode response"}`, http.StatusInternalServerError)
 	}
+}
+
+// HandleConfigGet returns the configured default container dimensions
+func (h *PackHandler) HandleConfigGet(w http.ResponseWriter, r *http.Request) {
+	config := map[string]float64{
+		"default_container_l": getEnvFloat("DEFAULT_CONTAINER_L", 60.0),
+		"default_container_w": getEnvFloat("DEFAULT_CONTAINER_W", 40.0),
+		"default_container_h": getEnvFloat("DEFAULT_CONTAINER_H", 50.0),
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(config)
+}
+
+func getEnvFloat(key string, fallback float64) float64 {
+	if val := os.Getenv(key); val != "" {
+		if parsed, err := strconv.ParseFloat(val, 64); err == nil {
+			return parsed
+		}
+	}
+	return fallback
 }

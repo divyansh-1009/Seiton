@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-export default function IngressScreen({ onFileUpload }) {
+export default function IngressScreen({ onFileUpload, defaultDimensions }) {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState(null);
 
@@ -32,9 +32,17 @@ export default function IngressScreen({ onFileUpload }) {
 
   const [packMode, setPackMode] = useState('bulk');
   const [numBoxes, setNumBoxes] = useState(20);
-  const [containerL, setContainerL] = useState(120);
-  const [containerW, setContainerW] = useState(80);
-  const [containerH, setContainerH] = useState(100);
+  const [containerL, setContainerL] = useState(defaultDimensions?.L || 0);
+  const [containerW, setContainerW] = useState(defaultDimensions?.W || 0);
+  const [containerH, setContainerH] = useState(defaultDimensions?.H || 0);
+
+  useEffect(() => {
+    if (defaultDimensions) {
+      setContainerL(defaultDimensions.L);
+      setContainerW(defaultDimensions.W);
+      setContainerH(defaultDimensions.H);
+    }
+  }, [defaultDimensions]);
 
   return (
     <section className="screen screen-ingress" id="screen-ingress">

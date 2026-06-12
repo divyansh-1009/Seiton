@@ -9,11 +9,11 @@ services:
     startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: REFERENCE_WIDTH_CM
-        value: 15.59
+        value: 16
       - key: REFERENCE_HEIGHT_CM
-        value: 6.63
+        value: 7
       - key: DEFAULT_BOX_HEIGHT_CM
-        value: 15.0
+        value: 20.0
 
   # 2. Go API Gateway (Docker service packaging C++ Engine and Go binary)
   # Deployed as a Web Service (web) on the Free tier
@@ -30,3 +30,9 @@ services:
         value: https://seiton-perception.onrender.com
       - key: ALLOWED_ORIGINS
         value: https://seiton-pi.vercel.app
+      - key: DEFAULT_CONTAINER_L
+        value: 60
+      - key: DEFAULT_CONTAINER_W
+        value: 40
+      - key: DEFAULT_CONTAINER_H
+        value: 50

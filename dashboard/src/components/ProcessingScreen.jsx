@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 
-export default function ProcessingScreen() {
+export default function ProcessingScreen({ message = "Processing...", eyebrow = "Execution pipeline" }) {
   const outerRef = useRef(null);
   const middleRef = useRef(null);
   const coreRef = useRef(null);
@@ -49,8 +49,8 @@ export default function ProcessingScreen() {
                 <span ref={coreRef} className="loader-core"></span>
             </div>
 
-            <p className="eyebrow">Execution pipeline</p>
-            <h2>Processing...</h2>
+            <p className="eyebrow">{eyebrow}</p>
+            <h2 style={{ fontSize: 'clamp(2rem, 5vw, 4rem)' }}>{message}</h2>
 
             <div className="processing-steps">
             </div>
