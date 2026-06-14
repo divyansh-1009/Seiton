@@ -47,7 +47,10 @@ graph LR
 5. **Digital Twin**: The calculated execution matrix (containing 3D target coordinates, rotations, and sequence order) is returned to the dashboard where GSAP and React Three Fiber render the 3D packing layout.
 
 ---
+## Project Resources
 
+[View Project Assets](https://drive.google.com/drive/folders/11R1BICPSdbK6cTZ5n9Cuqykj3twlKyJ-?usp=sharing)
+---
 ## Tech Stack
 
 * **Frontend**: React, Vite, Threejs, GSAP
