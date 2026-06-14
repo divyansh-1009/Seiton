@@ -21,16 +21,18 @@ export default function DigitalTwinScreen({ uploadedFile, executionMatrix, packM
       { y: 0, opacity: 1, duration: 0.9, stagger: 0.08, ease: "power2.out" }
     );
 
-    if (packMode === 'bulk' || packMode === 'incremental') {
+    if (packMode === 'bulk') {
       setAnimProgress(0);
       gsap.to({ value: 0 }, {
         value: 100,
-        duration: packMode === 'bulk' ? 4.5 : 2.5,
+        duration: 4.5,
         ease: "power1.inOut",
         onUpdate: function() {
           setAnimProgress(this.targets()[0].value);
         }
       });
+    } else if (packMode === 'incremental') {
+      setAnimProgress(0); // Let the user manually control the slider
     }
   }, [packMode, executionMatrix]);
 

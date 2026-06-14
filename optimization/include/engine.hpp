@@ -7,7 +7,7 @@ namespace seiton {
 
 class Engine {
 public:
-    static ExecutionMatrix pack(const Container& container, std::vector<Item> items);
+    static ExecutionMatrix pack(const Container& container, std::vector<Item> items, bool incremental_mode = false);
 };
 
 }

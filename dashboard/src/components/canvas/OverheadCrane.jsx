@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Box, Cone } from '@react-three/drei';
+import { Box, Cone, Cylinder } from '@react-three/drei';
 
 const COLORS = {
   accent: "#e1ff51",
@@ -108,6 +108,30 @@ export default function OverheadCrane({ executionMatrix, animProgress, viewMode,
           <Box args={[1.5, 1.2, 1.2]}>
             <meshStandardMaterial color="#444" />
           </Box>
+
+          {/* Perception Camera Module - Highly distinct white casing with bright LED */}
+          <group position={[1.4, -0.2, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
+            {/* Camera Body */}
+            <Box args={[0.8, 0.8, 0.6]}>
+              <meshStandardMaterial color="#ffffff" metalness={0.2} roughness={0.3} />
+            </Box>
+            {/* Camera Lens Housing */}
+            <Cylinder args={[0.3, 0.3, 0.4, 16]} position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}>
+              <meshStandardMaterial color="#111" />
+            </Cylinder>
+            {/* Lens Glass */}
+            <Cylinder args={[0.25, 0.25, 0.1, 16]} position={[0, 0, 0.6]} rotation={[Math.PI / 2, 0, 0]}>
+              <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={1.5} />
+            </Cylinder>
+            {/* Status LED (Red) */}
+            <Box args={[0.2, 0.2, 0.2]} position={[0.3, -0.4, 0]}>
+              <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={2} />
+            </Box>
+            {/* High-gain Antenna */}
+            <Cylinder args={[0.04, 0.04, 0.8]} position={[-0.3, -0.4, -0.2]} rotation={[Math.PI / 2, 0, 0]}>
+              <meshStandardMaterial color="#ffaa00" />
+            </Cylinder>
+          </group>
 
           {/* Cable & Magnet (Moves on Y) */}
           <group ref={magnetRef} position={[0, -2, 0]}>

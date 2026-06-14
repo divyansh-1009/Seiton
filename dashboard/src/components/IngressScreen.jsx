@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 export default function IngressScreen({ onFileUpload, defaultDimensions }) {
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -62,7 +63,15 @@ export default function IngressScreen({ onFileUpload, defaultDimensions }) {
 
   return (
     <section className="screen screen-ingress" id="screen-ingress">
-        <div className="panel panel-ingress">
+        <div className="panel panel-ingress" style={{ position: 'relative' }}>
+            <button 
+              className="toggle-btn" 
+              style={{ position: 'absolute', top: '1rem', right: '1rem', border: '1px solid var(--color-accent)', background: 'var(--color-base)', padding: '0.5rem 0.75rem', fontWeight: 'bold' }}
+              onClick={() => setShowInfo(true)}
+              title="Feature Guide"
+            >
+              ?
+            </button>
             <p className="eyebrow">Logistics made autonomous</p>
             <h1>Seiton</h1>
 
@@ -156,6 +165,55 @@ export default function IngressScreen({ onFileUpload, defaultDimensions }) {
               </>
             )}
         </div>
+
+        {showInfo && (
+          <div className="report-modal-overlay" onClick={() => setShowInfo(false)}>
+            <div className="panel report-modal-content" style={{ width: 'min(90vw, 55rem)' }} onClick={(e) => e.stopPropagation()}>
+              <h2 style={{textTransform: 'uppercase', marginBottom: '1.5rem'}}>Feature Guide</h2>
+              
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', textAlign: 'left'}}>
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Bulk Mode</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Generates and packs a predefined number of random boxes simultaneously to simulate maximum container density scenarios without camera input.</p>
+                </div>
+                
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Incremental Mode</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Uses computer vision to extract items from a live camera feed and mathematically calculates their optimal placement into an already partially-filled container.</p>
+                </div>
+                
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Assembly View</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Renders the physical layout of the boxes as solid objects, allowing you to see exactly how the items are packed in the real world.</p>
+                </div>
+                
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Stress View</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Switches to a wireframe X-ray mode to help visualize the internal density and identify load-bearing stress points across the container.</p>
+                </div>
+
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Crane Animation</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>In incremental mode, this slider scrubs through the real-time robotic crane placement trajectory for the currently detected item.</p>
+                </div>
+                
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Performance Report</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Compares the mathematical efficiency of the Seiton algorithm against average human manual packing, detailing time and space savings.</p>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Packing Limits & Empty Space</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>You may notice empty space if boxes are rejected. This occurs because random, rigid boxes cannot perfectly fill 100% of a container like a liquid. The algorithm successfully reaches the mathematical packing limits of irregular dimensions.</p>
+                </div>
+              </div>
+
+              <button className="cta" style={{width: '100%', marginTop: '2rem'}} onClick={() => setShowInfo(false)}>
+                Got it
+              </button>
+            </div>
+          </div>
+        )}
     </section>
   );
 }

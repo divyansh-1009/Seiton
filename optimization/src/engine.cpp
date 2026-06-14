@@ -3,11 +3,13 @@
 
 namespace seiton {
 
-ExecutionMatrix Engine::pack(const Container& container, std::vector<Item> items) {
+ExecutionMatrix Engine::pack(const Container& container, std::vector<Item> items, bool incremental_mode) {
     ExecutionMatrix result;
     result.optimization_status = "SUCCESS";
     
-    Sorter::sortItemsFFD(items);
+    if (!incremental_mode) {
+        Sorter::sortItemsFFD(items);
+    }
     
     std::vector<Coordinate> eps;
     eps.push_back({0.0, 0.0, 0.0});

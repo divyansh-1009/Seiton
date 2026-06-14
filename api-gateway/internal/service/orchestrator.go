@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"time"
 	
 	"github.com/divyansh-1009/seiton/api-gateway/internal/client"
 	"github.com/divyansh-1009/seiton/api-gateway/internal/model"
@@ -50,7 +51,55 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 				Sequence:            []model.StepData{},
 			}, nil
 		}
-		itemsToProcess = perceptionResp.Items
+		
+		// 1. Generate a random baseline of pre-filled boxes that are guaranteed to fit
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		numPrefilled := r.Intn(6) + 15 // Random between 15 and 20 boxes
+
+		for i := 0; i < numPrefilled; i++ {
+			id := fmt.Sprintf("prefilled_%03d", i+1)
+			
+			maxDimL := containerL / 3.0
+			if maxDimL < 10 { maxDimL = 10 }
+			if maxDimL > 30 { maxDimL = 30 }
+			maxDimW := containerW / 3.0
+			if maxDimW < 10 { maxDimW = 10 }
+			if maxDimW > 30 { maxDimW = 30 }
+			maxDimH := containerH / 3.0
+			if maxDimH < 10 { maxDimH = 10 }
+			if maxDimH > 30 { maxDimH = 30 }
+
+			l := 10.0 + r.Float64()*(maxDimL - 10.0)
+			w := 10.0 + r.Float64()*(maxDimW - 10.0)
+			h := 10.0 + r.Float64()*(maxDimH - 10.0)
+
+			itemsToProcess = append(itemsToProcess, model.Item{
+				ID:         id,
+				Confidence: 1.0,
+				Dimensions: model.Dimensions{
+					Length: l,
+					Width:  w,
+					Height: h,
+				},
+				SourceCoordinates: model.Coordinates{
+					X: -50.0,
+					Y: 0,
+					Z: 0,
+				},
+			})
+		}
+		
+		// Sort the pre-filled boxes by volume descending (FFD heuristic) 
+		// so they pack into a dense, flat baseline and don't fragment the container.
+		sort.SliceStable(itemsToProcess, func(i, j int) bool {
+			volI := itemsToProcess[i].Dimensions.Length * itemsToProcess[i].Dimensions.Width * itemsToProcess[i].Dimensions.Height
+			volJ := itemsToProcess[j].Dimensions.Length * itemsToProcess[j].Dimensions.Width * itemsToProcess[j].Dimensions.Height
+			return volI > volJ
+		})
+		
+		// 2. Append the newly detected box from the perception pipeline to the end
+		itemsToProcess = append(itemsToProcess, perceptionResp.Items...)
+		
 	} else {
 		// BULK MODE: Generate N random boxes directly
 		for i := 0; i < numBoxes; i++ {
@@ -103,6 +152,7 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 	optReq := &model.OptimizationRequest{
 		TargetContainer: container,
 		ItemsToPack:     itemsToPack,
+		IncrementalMode: packMode == "incremental",
 	}
 
 	matrix, err := o.engineClient.RunOptimization(optReq)
@@ -158,6 +208,10 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 		item, exists := itemMap[lookupID]
 		if exists {
 			step.ID = lookupID
+			
+			// Mark as pre-filled if it has the prefilled prefix, or if we want to manually set it based on logic.
+			// In our logic, all `prefilled_` IDs are pre-filled.
+			step.IsPrefilled = (len(lookupID) >= 9 && lookupID[:9] == "prefilled")
 			
 			// Size in Three.js world units. 
 			// If the C++ engine performed a rotation, the rotated L, W, H bounds will be returned in TargetCoordinates!

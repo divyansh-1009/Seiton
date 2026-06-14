@@ -27,7 +27,7 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
     if (!executionMatrix || executionMatrix.length === 0) return;
     
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Box ID,Length (cm),Width (cm),Height (cm),Position X (cm),Position Y (cm),Position Z (cm)\n";
+    csvContent += "Box ID,Length (cm),Width (cm),Height (cm),Position X (cm),Position Y (cm),Position Z (cm),Status\n";
     
     executionMatrix.forEach(box => {
       // Convert Three.js world units back to physical cm (x10)
@@ -39,8 +39,10 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
       const posY = box.target_coordinate ? (box.target_coordinate[1] * 10).toFixed(1) : "0.0";
       const posZ = box.target_coordinate ? (box.target_coordinate[2] * 10).toFixed(1) : "0.0";
       
+      const boxStatus = box.is_prefilled ? 'Pre-filled' : (packMode === 'incremental' ? 'Active' : 'Packed');
+
       // Output back in familiar L, W, H physical bounds
-      csvContent += `${box.id || 'Unknown'},${sizeX},${sizeZ},${sizeY},${posX},${posZ},${posY}\n`;
+      csvContent += `${box.id || 'Unknown'},${sizeX},${sizeZ},${sizeY},${posX},${posZ},${posY},${boxStatus}\n`;
     });
     
     const encodedUri = encodeURI(csvContent);
@@ -148,6 +150,9 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
                     <h3 id="hud-step">
                       Progress: {animProgress}%
                     </h3>
+                    <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.8 }}>
+                      {executionMatrix ? executionMatrix.filter(b => b.is_prefilled).length : 0} pre-filled items packed.
+                    </p>
                   </>
                 )}
             </div>
@@ -198,10 +203,20 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
 
         {showInfo && (
           <div className="report-modal-overlay" onClick={() => setShowInfo(false)}>
-            <div className="panel report-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="panel report-modal-content" style={{ width: 'min(90vw, 55rem)' }} onClick={(e) => e.stopPropagation()}>
               <h2 style={{textTransform: 'uppercase', marginBottom: '1.5rem'}}>Feature Guide</h2>
               
-              <div style={{display: 'grid', gap: '1.5rem', textAlign: 'left'}}>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', textAlign: 'left'}}>
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Bulk Mode</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Generates and packs a predefined number of random boxes simultaneously to simulate maximum container density scenarios without camera input.</p>
+                </div>
+                
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Incremental Mode</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Uses computer vision to extract items from a live camera feed and mathematically calculates their optimal placement into an already partially-filled container.</p>
+                </div>
+                
                 <div>
                   <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Assembly View</p>
                   <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Renders the physical layout of the boxes as solid objects, allowing you to see exactly how the items are packed in the real world.</p>
@@ -222,7 +237,7 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
                   <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Compares the mathematical efficiency of the Seiton algorithm against average human manual packing, detailing time and space savings.</p>
                 </div>
 
-                <div>
+                <div style={{ gridColumn: '1 / -1' }}>
                   <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Packing Limits & Empty Space</p>
                   <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>You may notice empty space if boxes are rejected. This occurs because random, rigid boxes cannot perfectly fill 100% of a container like a liquid. The algorithm successfully reaches the mathematical packing limits of irregular dimensions.</p>
                 </div>

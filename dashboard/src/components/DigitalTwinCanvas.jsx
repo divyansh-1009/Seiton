@@ -24,7 +24,7 @@ export default function DigitalTwinCanvas({ executionMatrix, animProgress, viewM
     <div style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 1 }}>
       <Canvas 
         shadows 
-        camera={{ position: [cL * 2, cH * 2, cW * 2], fov: 45 }}
+        camera={{ position: [cL * 2.2, cH * 2.5, cW * 2.8], fov: 45 }}
         gl={{ antialias: true }}
       >
         <color attach="background" args={[COLORS.base]} />

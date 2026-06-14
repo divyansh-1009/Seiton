@@ -31,6 +31,7 @@ type Coordinates struct {
 type OptimizationRequest struct {
 	TargetContainer Container    `json:"target_container"`
 	ItemsToPack     []PackedItem `json:"items_to_pack"`
+	IncrementalMode bool         `json:"incremental_mode"`
 }
 
 type Container struct {
@@ -65,6 +66,7 @@ type StepData struct {
 	Size             []float64 `json:"size"`
 	SourceCoordinate []float64 `json:"source_coordinate"`
 	TargetCoordinate []float64 `json:"target_coordinate"`
+	IsPrefilled      bool      `json:"is_prefilled"`
 }
 
 type TargetCoordinates struct {

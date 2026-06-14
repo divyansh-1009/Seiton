@@ -37,8 +37,11 @@ int main() {
             items.push_back(item);
         }
 
+        // Parse incremental_mode
+        bool incremental_mode = j.value("incremental_mode", false);
+
         // Call Engine
-        seiton::ExecutionMatrix matrix = seiton::Engine::pack(container, items);
+        seiton::ExecutionMatrix matrix = seiton::Engine::pack(container, items, incremental_mode);
 
         // Serialize output
         json out;

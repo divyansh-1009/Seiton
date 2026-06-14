@@ -78,51 +78,42 @@ export default function InstancedBoxes({ executionMatrix, animProgress, viewMode
       let boxScale = new THREE.Vector3(sizeX, sizeY, sizeZ);
 
       if (packMode === 'incremental') {
-        const N = totalInstances;
-        const slice = 1.0 / N;
-        const startT = i * slice;
-        const endT = (i + 1) * slice;
-        
-        let localT = 0;
-        if (t <= startT) {
-           localT = 0; // Not picked up yet
-        } else if (t >= endT) {
-           localT = 1; // Already placed
+        if (move.is_prefilled) {
+           cornerX = move.target_coordinate[0];
+           cornerY = move.target_coordinate[1];
+           cornerZ = move.target_coordinate[2];
         } else {
-           localT = (t - startT) / slice; // 0 to 1 during its slice
-        }
-        
-        const src = move.source_coordinate || move.target_coordinate;
-        const tgt = move.target_coordinate;
-        const craneHeight = (containerSize ? containerSize[1] : 10) + 2; 
+           const src = move.source_coordinate || move.target_coordinate;
+           const tgt = move.target_coordinate;
+           const craneHeight = (containerSize ? containerSize[1] : 10) + 2; 
 
-        if (localT === 0) {
-           cornerX = src[0];
-           cornerY = src[1];
-           cornerZ = src[2];
-           boxScale.set(0, 0, 0); // Hide before picked up
-        } else if (localT === 1) {
-           cornerX = tgt[0];
-           cornerY = tgt[1];
-           cornerZ = tgt[2];
-        } else {
-            // Animate along crane path using localT
-            if (localT <= 0.25) {
-              const p = localT / 0.25;
+           if (t === 0) {
               cornerX = src[0];
-              cornerY = src[1] + (craneHeight - src[1]) * p;
+              cornerY = src[1];
               cornerZ = src[2];
-            } else if (localT <= 0.75) {
-              const p = (localT - 0.25) / 0.5;
-              cornerX = src[0] + (tgt[0] - src[0]) * p;
-              cornerY = craneHeight;
-              cornerZ = src[2] + (tgt[2] - src[2]) * p;
-            } else {
-              const p = (localT - 0.75) / 0.25;
+           } else if (t === 1) {
               cornerX = tgt[0];
-              cornerY = craneHeight + (tgt[1] - craneHeight) * p;
+              cornerY = tgt[1];
               cornerZ = tgt[2];
-            }
+           } else {
+               // Animate along crane path using t (0 to 1)
+               if (t <= 0.25) {
+                 const p = t / 0.25;
+                 cornerX = src[0];
+                 cornerY = src[1] + (craneHeight - src[1]) * p;
+                 cornerZ = src[2];
+               } else if (t <= 0.75) {
+                 const p = (t - 0.25) / 0.5;
+                 cornerX = src[0] + (tgt[0] - src[0]) * p;
+                 cornerY = craneHeight;
+                 cornerZ = src[2] + (tgt[2] - src[2]) * p;
+               } else {
+                 const p = (t - 0.75) / 0.25;
+                 cornerX = tgt[0];
+                 cornerY = craneHeight + (tgt[1] - craneHeight) * p;
+                 cornerZ = tgt[2];
+               }
+           }
         }
       } else if (packMode === 'bulk') {
         const stagger = 0.8 / Math.max(1, totalInstances - 1);
@@ -173,11 +164,9 @@ export default function InstancedBoxes({ executionMatrix, animProgress, viewMode
         const stressRatio = stresses[i] || 0;
         tempColor.setHSL((1 - stressRatio) * 0.3, 1.0, 0.5);
       } else if (packMode === 'incremental') {
-         const N = totalInstances;
-         const slice = 1.0 / N;
-         const startT = i * slice;
-         const endT = (i + 1) * slice;
-         if (t >= startT && t <= endT && t < 1.0) {
+         if (move.is_prefilled) {
+             tempColor.copy(PALETTE[i % PALETTE.length]);
+         } else if (t < 1.0) {
              tempColor.copy(COLORS.active);
          } else {
              tempColor.copy(PALETTE[i % PALETTE.length]);
