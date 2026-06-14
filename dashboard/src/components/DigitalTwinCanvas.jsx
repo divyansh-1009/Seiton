@@ -74,8 +74,8 @@ export default function DigitalTwinCanvas({ executionMatrix, animProgress, viewM
           makeDefault
         />
 
-        {/* Axis Gizmo like reference repo */}
-        <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+        {/* Axis Gizmo moved below the View Report button */}
+        <GizmoHelper alignment="top-right" margin={[60, 200]}>
           <GizmoViewport axisColors={['#ef4444', '#10b981', '#3b82f6']} labelColor="white" />
         </GizmoHelper>
       </Canvas>

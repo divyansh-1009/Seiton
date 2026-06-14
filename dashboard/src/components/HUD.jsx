@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 export default function HUD({ uploadedFile, executionMatrix, animProgress, setAnimProgress, viewMode, setViewMode, packMode, stats }) {
   const [showReport, setShowReport] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const totalBoxes = executionMatrix ? executionMatrix.length : 0;
   const currentStats = stats || { spaceUtilization: 85, execTime: 0.5 };
   
@@ -41,23 +42,36 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
                 <button 
                   className={`toggle-btn ${viewMode === 'assembly' ? 'active' : ''}`}
                   onClick={() => setViewMode('assembly')}
+                  title="View the physical solid layout of the packed boxes"
                 >
                   Assembly View
                 </button>
                 <button 
                   className={`toggle-btn ${viewMode === 'stress' ? 'active' : ''}`}
                   onClick={() => setViewMode('stress')}
+                  title="View the packing density and stress visualization as wireframes"
                 >
                   Stress View
                 </button>
               </div>
-              <button 
-                className="toggle-btn" 
-                style={{ pointerEvents: 'auto', border: '1px solid var(--color-accent)', width: '100%', background: 'var(--color-base)' }}
-                onClick={() => setShowReport(true)}
-              >
-                View Report
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem', pointerEvents: 'auto', width: '100%' }}>
+                <button 
+                  className="toggle-btn" 
+                  style={{ border: '1px solid var(--color-accent)', flex: 1, background: 'var(--color-base)' }}
+                  onClick={() => setShowReport(true)}
+                  title="View a detailed performance comparison against manual packing"
+                >
+                  View Report
+                </button>
+                <button 
+                  className="toggle-btn" 
+                  style={{ border: '1px solid var(--color-accent)', background: 'var(--color-base)', padding: '0.5rem 0.75rem', fontWeight: 'bold' }}
+                  onClick={() => setShowInfo(true)}
+                  title="Feature Guide"
+                >
+                  ?
+                </button>
+              </div>
             </div>
         </div>
 
@@ -87,7 +101,13 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
                 {packMode === 'bulk' ? (
                   <>
                     <h3>{totalBoxes} boxes</h3>
-                    <p>All items packed &amp; rendered</p>
+                    {currentStats?.requestedBoxes && Number(currentStats.requestedBoxes) > totalBoxes ? (
+                      <p style={{ color: '#ff7a7a' }}>
+                        Requested {currentStats.requestedBoxes}, but <strong>{Number(currentStats.requestedBoxes) - totalBoxes}</strong> could not fit.
+                      </p>
+                    ) : (
+                      <p>All requested items packed &amp; rendered</p>
+                    )}
                   </>
                 ) : (
                   <>
@@ -132,6 +152,40 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
 
               <button className="cta" style={{width: '100%', marginTop: '2rem'}} onClick={() => setShowReport(false)}>
                 Close Report
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showInfo && (
+          <div className="report-modal-overlay" onClick={() => setShowInfo(false)}>
+            <div className="panel report-modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2 style={{textTransform: 'uppercase', marginBottom: '1.5rem'}}>Feature Guide</h2>
+              
+              <div style={{display: 'grid', gap: '1.5rem', textAlign: 'left'}}>
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Assembly View</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Renders the physical layout of the boxes as solid objects, allowing you to see exactly how the items are packed in the real world.</p>
+                </div>
+                
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Stress View</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Switches to a wireframe X-ray mode to help visualize the internal density and identify load-bearing stress points across the container.</p>
+                </div>
+
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Crane Animation</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>In incremental mode, this slider scrubs through the real-time robotic crane placement trajectory for the currently detected item.</p>
+                </div>
+                
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Performance Report</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Compares the mathematical efficiency of the Seiton algorithm against average human manual packing, detailing time and space savings.</p>
+                </div>
+              </div>
+
+              <button className="cta" style={{width: '100%', marginTop: '2rem'}} onClick={() => setShowInfo(false)}>
+                Got it
               </button>
             </div>
           </div>

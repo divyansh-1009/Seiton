@@ -129,9 +129,9 @@ function App() {
         setContainerSize(data.container_size);
       }
       if (data.space_utilization_pct) {
-        setStats({ spaceUtilization: data.space_utilization_pct, execTime: timeTaken });
+        setStats({ spaceUtilization: data.space_utilization_pct, execTime: timeTaken, requestedBoxes: mode === 'bulk' ? (config.numBoxes || '20') : null });
       } else {
-        setStats({ spaceUtilization: 85, execTime: timeTaken });
+        setStats({ spaceUtilization: 85, execTime: timeTaken, requestedBoxes: mode === 'bulk' ? (config.numBoxes || '20') : null });
       }
       setIsProcessing(false);
       if (mode === 'bulk') {

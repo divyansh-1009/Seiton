@@ -31,10 +31,10 @@ export default function IngressScreen({ onFileUpload, defaultDimensions }) {
   };
 
   const [packMode, setPackMode] = useState('bulk');
-  const [numBoxes, setNumBoxes] = useState(20);
-  const [containerL, setContainerL] = useState(defaultDimensions?.L || 0);
-  const [containerW, setContainerW] = useState(defaultDimensions?.W || 0);
-  const [containerH, setContainerH] = useState(defaultDimensions?.H || 0);
+  const [numBoxes, setNumBoxes] = useState('');
+  const [containerL, setContainerL] = useState(defaultDimensions?.L || '');
+  const [containerW, setContainerW] = useState(defaultDimensions?.W || '');
+  const [containerH, setContainerH] = useState(defaultDimensions?.H || '');
 
   useEffect(() => {
     if (defaultDimensions) {
@@ -43,6 +43,22 @@ export default function IngressScreen({ onFileUpload, defaultDimensions }) {
       setContainerH(defaultDimensions.H);
     }
   }, [defaultDimensions]);
+
+  // Max theoretical boxes based on minimum 10x10x10cm random box size
+  const maxPossibleBoxes = Math.max(1, 
+    Math.floor((containerL || 120) / 10) * 
+    Math.floor((containerW || 80) / 10) * 
+    Math.floor((containerH || 100) / 10)
+  );
+
+  const handleNumBoxesChange = (e) => {
+    const val = parseInt(e.target.value, 10);
+    if (!isNaN(val)) {
+       setNumBoxes(Math.min(val, maxPossibleBoxes));
+    } else {
+       setNumBoxes('');
+    }
+  };
 
   return (
     <section className="screen screen-ingress" id="screen-ingress">
@@ -55,6 +71,7 @@ export default function IngressScreen({ onFileUpload, defaultDimensions }) {
                 className={`toggle-btn ${packMode === 'bulk' ? 'active' : ''}`}
                 onClick={() => { setPackMode('bulk'); setFile(null); }}
                 style={{ border: '1px solid var(--color-accent)' }}
+                title="Generates and packs random boxes into the container without vision input"
               >
                 Bulk Mode
               </button>
@@ -62,6 +79,7 @@ export default function IngressScreen({ onFileUpload, defaultDimensions }) {
                 className={`toggle-btn ${packMode === 'incremental' ? 'active' : ''}`}
                 onClick={() => setPackMode('incremental')}
                 style={{ border: '1px solid var(--color-accent)' }}
+                title="Uses computer vision to extract items from a camera feed and pack them"
               >
                 Incremental Mode
               </button>
@@ -70,27 +88,33 @@ export default function IngressScreen({ onFileUpload, defaultDimensions }) {
             {packMode === 'bulk' ? (
               <div style={{ display: 'grid', gap: '1rem', textAlign: 'left', margin: '0 auto', maxWidth: '300px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <label>Number of Boxes:</label>
-                  <input type="number" min="1" max="100" value={numBoxes} onChange={(e) => setNumBoxes(e.target.value)} style={{ width: '60px', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }} />
+                  <label title="Number of random boxes to pack" style={{ cursor: 'help' }}>Number of Boxes:</label>
+                  <input type="number" placeholder="20" title={`Max capacity: ${maxPossibleBoxes} boxes`} min="1" max={maxPossibleBoxes} value={numBoxes} onChange={handleNumBoxesChange} style={{ width: '60px', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <label>Container Length (cm):</label>
-                  <input type="number" min="10" value={containerL} onChange={(e) => setContainerL(e.target.value)} style={{ width: '60px', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }} />
+                  <label title="Length of the container (cm)" style={{ cursor: 'help' }}>Container Length:</label>
+                  <input type="number" placeholder="120" title="Length (X-axis)" min="10" value={containerL} onChange={(e) => setContainerL(e.target.value)} style={{ width: '60px', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <label>Container Width (cm):</label>
-                  <input type="number" min="10" value={containerW} onChange={(e) => setContainerW(e.target.value)} style={{ width: '60px', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }} />
+                  <label title="Width of the container (cm)" style={{ cursor: 'help' }}>Container Width:</label>
+                  <input type="number" placeholder="80" title="Width (Z-axis)" min="10" value={containerW} onChange={(e) => setContainerW(e.target.value)} style={{ width: '60px', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <label>Container Height (cm):</label>
-                  <input type="number" min="10" value={containerH} onChange={(e) => setContainerH(e.target.value)} style={{ width: '60px', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }} />
+                  <label title="Height of the container (cm)" style={{ cursor: 'help' }}>Container Height:</label>
+                  <input type="number" placeholder="100" title="Height (Y-axis)" min="10" value={containerH} onChange={(e) => setContainerH(e.target.value)} style={{ width: '60px', background: 'transparent', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }} />
                 </div>
                 
                 <button
                     className="cta"
                     style={{ marginTop: '1rem' }}
                     type="button"
-                    onClick={() => onFileUpload(null, packMode, { numBoxes, containerL, containerW, containerH })}
+                    title="Run the 3D packing algorithm"
+                    onClick={() => onFileUpload(null, packMode, { 
+                        numBoxes: numBoxes || 20, 
+                        containerL: containerL || 120, 
+                        containerW: containerW || 80, 
+                        containerH: containerH || 100 
+                    })}
                 >
                     Generate Bulk Pack
                 </button>
