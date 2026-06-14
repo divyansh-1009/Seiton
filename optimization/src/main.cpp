@@ -56,6 +56,9 @@ int main() {
             target_coords["y"] = step.target_coordinates.y;
             target_coords["z"] = step.target_coordinates.z;
             target_coords["rotation_deg"] = step.target_coordinates.rotation_deg;
+            target_coords["l"] = step.target_coordinates.l;
+            target_coords["w"] = step.target_coordinates.w;
+            target_coords["h"] = step.target_coordinates.h;
             
             step_json["target_coordinates"] = target_coords;
             sequence.push_back(step_json);

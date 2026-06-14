@@ -1,4 +1,5 @@
 #include "../include/engine.hpp"
+#include <cmath>
 
 namespace seiton {
 
@@ -18,51 +19,78 @@ ExecutionMatrix Engine::pack(const Container& container, std::vector<Item> items
     for (const auto& item : items) {
         bool placed = false;
         
-        // Sort EPs (Z, then Y, then X) for packing heuristic
+        // 6 possible orientations (LWH, WLH, LHW, HLW, WHL, HWL)
+        std::vector<Item> orientations = {
+            {item.id, item.l, item.w, item.h, item.fragile},
+            {item.id, item.w, item.l, item.h, item.fragile},
+            {item.id, item.l, item.h, item.w, item.fragile},
+            {item.id, item.h, item.l, item.w, item.fragile},
+            {item.id, item.w, item.h, item.l, item.fragile},
+            {item.id, item.h, item.w, item.l, item.fragile}
+        };
+
+        // Sort EPs (Z, then Y, then X) for packing heuristic, rounding to mm (1e-3) to absorb float inaccuracies
+        // using a strict weak ordering mapping to guarantee std::sort stability.
         std::sort(eps.begin(), eps.end(), [](const Coordinate& a, const Coordinate& b){
-            if (a.z != b.z) return a.z < b.z;
-            if (a.y != b.y) return a.y < b.y;
-            return a.x < b.x;
+            long long za = std::round(a.z * 1000.0);
+            long long zb = std::round(b.z * 1000.0);
+            if (za != zb) return za < zb;
+            
+            long long ya = std::round(a.y * 1000.0);
+            long long yb = std::round(b.y * 1000.0);
+            if (ya != yb) return ya < yb;
+            
+            long long xa = std::round(a.x * 1000.0);
+            long long xb = std::round(b.x * 1000.0);
+            return xa < xb;
         });
         
         for (auto it = eps.begin(); it != eps.end(); ++it) {
             Coordinate ep = *it;
             
-            // Check container boundaries
-            if (ep.x + item.l > container.max_l_cm ||
-                ep.y + item.w > container.max_w_cm ||
-                ep.z + item.h > container.max_h_cm) {
-                continue;
+            for (size_t r = 0; r < orientations.size(); ++r) {
+                const Item& rot_item = orientations[r];
+
+                // Check container boundaries with epsilon tolerance
+                if (ep.x + rot_item.l > container.max_l_cm + 1e-4 ||
+                    ep.y + rot_item.w > container.max_w_cm + 1e-4 ||
+                    ep.z + rot_item.h > container.max_h_cm + 1e-4) {
+                    continue;
+                }
+                
+                if (!EPMath::noCollision(rot_item, ep, placed_items)) continue;
+                if (!EPMath::validateFragility(rot_item, ep, placed_items)) continue;
+                if (!EPMath::validateEquilibrium(rot_item, ep, placed_items)) continue;
+                
+                // Valid placement
+                placed = true;
+                placed_items.push_back({rot_item, ep});
+                used_volume += rot_item.volume();
+                
+                TargetCoordinate tc;
+                tc.x = ep.x;
+                tc.y = ep.y;
+                tc.z = ep.z;
+                tc.rotation_deg = 0; // Not explicitly mapping degrees to the frontend right now, just providing the swapped L/W/H
+                tc.l = rot_item.l;
+                tc.w = rot_item.w;
+                tc.h = rot_item.h;
+                
+                result.sequence.push_back(Step{
+                    step_counter++,
+                    item.id,
+                    tc
+                });
+                
+                eps.erase(it);
+                
+                auto new_eps = EPMath::generateNewEPs(ep, rot_item, container);
+                for (const auto& nep : new_eps) {
+                    eps.push_back(nep);
+                }
+                break; // Break the orientation loop
             }
-            
-            if (!EPMath::noCollision(item, ep, placed_items)) continue;
-            if (!EPMath::validateFragility(item, ep, placed_items)) continue;
-            if (!EPMath::validateEquilibrium(item, ep, placed_items)) continue;
-            
-            // Valid placement
-            placed = true;
-            placed_items.push_back({item, ep});
-            used_volume += item.volume();
-            
-            TargetCoordinate tc;
-            tc.x = ep.x;
-            tc.y = ep.y;
-            tc.z = ep.z;
-            tc.rotation_deg = 0;
-            
-            result.sequence.push_back(Step{
-                step_counter++,
-                item.id,
-                tc
-            });
-            
-            eps.erase(it);
-            
-            auto new_eps = EPMath::generateNewEPs(ep, item, container);
-            for (const auto& nep : new_eps) {
-                eps.push_back(nep);
-            }
-            break;
+            if (placed) break; // Break the EP loop if placed
         }
         
         if (!placed) {

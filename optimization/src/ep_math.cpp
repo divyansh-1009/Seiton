@@ -1,5 +1,6 @@
 #include "../include/ep_math.hpp"
 #include <algorithm>
+#include <cmath>
 
 namespace seiton {
 
@@ -54,9 +55,9 @@ bool EPMath::noCollision(
 
     for (const auto& pi : placed_items) {
         // Check for 3D AABB intersection
-        bool intersect_x = (new_pos.x < pi.max_x()) && (nx_max > pi.position.x);
-        bool intersect_y = (new_pos.y < pi.max_y()) && (ny_max > pi.position.y);
-        bool intersect_z = (new_pos.z < pi.max_z()) && (nz_max > pi.position.z);
+        bool intersect_x = (new_pos.x < pi.max_x() - 1e-4) && (nx_max > pi.position.x + 1e-4);
+        bool intersect_y = (new_pos.y < pi.max_y() - 1e-4) && (ny_max > pi.position.y + 1e-4);
+        bool intersect_z = (new_pos.z < pi.max_z() - 1e-4) && (nz_max > pi.position.z + 1e-4);
 
         if (intersect_x && intersect_y && intersect_z) {
             return false; // Collision detected
@@ -75,9 +76,9 @@ bool EPMath::validateFragility(
 
     for (const auto& pi : placed_items) {
         // Check if `pi` is directly beneath `new_item`
-        if (new_pos.z == pi.max_z()) {
-            bool intersect_x = (new_pos.x < pi.max_x()) && ((new_pos.x + new_item.l) > pi.position.x);
-            bool intersect_y = (new_pos.y < pi.max_y()) && ((new_pos.y + new_item.w) > pi.position.y);
+        if (std::abs(new_pos.z - pi.max_z()) < 1e-4) {
+            bool intersect_x = (new_pos.x < pi.max_x() - 1e-4) && ((new_pos.x + new_item.l) > pi.position.x + 1e-4);
+            bool intersect_y = (new_pos.y < pi.max_y() - 1e-4) && ((new_pos.y + new_item.w) > pi.position.y + 1e-4);
             
             if (intersect_x && intersect_y) {
                 // Rule: No item can ever be stacked on top of an item where fragile == true
@@ -103,7 +104,7 @@ bool EPMath::validateEquilibrium(
 
     for (const auto& pi : placed_items) {
         // Find items directly beneath
-        if (new_pos.z == pi.max_z()) {
+        if (std::abs(new_pos.z - pi.max_z()) < 1e-4) {
             // Calculate overlap rectangle in XY plane
             double overlap_x_start = std::max(new_pos.x, pi.position.x);
             double overlap_x_end = std::min(new_pos.x + new_item.l, pi.max_x());
@@ -119,7 +120,7 @@ bool EPMath::validateEquilibrium(
     }
 
     // Must be supported by at least 70%
-    return (supported_area / base_area) >= 0.70;
+    return (supported_area / base_area) >= 0.6999;
 }
 
 } 

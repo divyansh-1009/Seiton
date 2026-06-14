@@ -72,4 +72,7 @@ type TargetCoordinates struct {
 	Y           float64 `json:"y"`
 	Z           float64 `json:"z"`
 	RotationDeg float64 `json:"rotation_deg"`
+	L           float64 `json:"l"`
+	W           float64 `json:"w"`
+	H           float64 `json:"h"`
 }

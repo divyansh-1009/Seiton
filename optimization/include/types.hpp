@@ -15,6 +15,9 @@ struct Coordinate {
 // Coordinate mapping with rotation state, matching "Execution Matrix" output
 struct TargetCoordinate : public Coordinate {
     int rotation_deg;
+    double l;
+    double w;
+    double h;
 };
 
 // Item representing a box to be packed

@@ -23,6 +23,35 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
     ? executionMatrix.find(m => m.step === 1)
     : null;
 
+  const handleDownloadStats = () => {
+    if (!executionMatrix || executionMatrix.length === 0) return;
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Box ID,Length (cm),Width (cm),Height (cm),Position X (cm),Position Y (cm),Position Z (cm)\n";
+    
+    executionMatrix.forEach(box => {
+      // Convert Three.js world units back to physical cm (x10)
+      const sizeX = box.size ? (box.size[0] * 10).toFixed(1) : "0.0";
+      const sizeY = box.size ? (box.size[1] * 10).toFixed(1) : "0.0"; // Three.js Y maps to C++ H
+      const sizeZ = box.size ? (box.size[2] * 10).toFixed(1) : "0.0"; // Three.js Z maps to C++ W
+      
+      const posX = box.target_coordinate ? (box.target_coordinate[0] * 10).toFixed(1) : "0.0";
+      const posY = box.target_coordinate ? (box.target_coordinate[1] * 10).toFixed(1) : "0.0";
+      const posZ = box.target_coordinate ? (box.target_coordinate[2] * 10).toFixed(1) : "0.0";
+      
+      // Output back in familiar L, W, H physical bounds
+      csvContent += `${box.id || 'Unknown'},${sizeX},${sizeZ},${sizeY},${posX},${posZ},${posY}\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "seiton_packing_stats.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="twin-overlay">
         <div className="hud hud-top">
@@ -102,9 +131,14 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
                   <>
                     <h3>{totalBoxes} boxes</h3>
                     {currentStats?.requestedBoxes && Number(currentStats.requestedBoxes) > totalBoxes ? (
-                      <p style={{ color: '#ff7a7a' }}>
-                        Requested {currentStats.requestedBoxes}, but <strong>{Number(currentStats.requestedBoxes) - totalBoxes}</strong> could not fit.
-                      </p>
+                      <div style={{ color: 'var(--color-accent)' }}>
+                        <p>
+                          Requested {currentStats.requestedBoxes}, but <strong>{Number(currentStats.requestedBoxes) - totalBoxes}</strong> could not fit.
+                        </p>
+                        <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.8, lineHeight: '1.4' }}>
+                          (The remaining random boxes physically exceed the container's leftover geometric capacity. The empty space represents the mathematical maximum limit of packing irregular 3D objects.)
+                        </p>
+                      </div>
                     ) : (
                       <p>All requested items packed &amp; rendered</p>
                     )}
@@ -150,9 +184,14 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
                 <h3 style={{fontSize: '1.5rem', marginTop: '0.5rem'}}>Space Gained: {spaceGained > 0 ? spaceGained : 0}%</h3>
               </div>
 
-              <button className="cta" style={{width: '100%', marginTop: '2rem'}} onClick={() => setShowReport(false)}>
-                Close Report
-              </button>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <button className="cta" style={{ flex: 1, background: 'transparent', border: '1px solid var(--color-accent)', color: 'var(--color-accent)' }} onClick={handleDownloadStats}>
+                  Download Stats (CSV)
+                </button>
+                <button className="cta" style={{ flex: 1 }} onClick={() => setShowReport(false)}>
+                  Close Report
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -181,6 +220,11 @@ export default function HUD({ uploadedFile, executionMatrix, animProgress, setAn
                 <div>
                   <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Performance Report</p>
                   <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>Compares the mathematical efficiency of the Seiton algorithm against average human manual packing, detailing time and space savings.</p>
+                </div>
+
+                <div>
+                  <p className="eyebrow" style={{marginBottom: '0.25rem', color: 'var(--color-accent)'}}>Packing Limits & Empty Space</p>
+                  <p style={{fontSize: '0.9rem', lineHeight: '1.5', opacity: 0.9}}>You may notice empty space if boxes are rejected. This occurs because random, rigid boxes cannot perfectly fill 100% of a container like a liquid. The algorithm successfully reaches the mathematical packing limits of irregular dimensions.</p>
                 </div>
               </div>
 

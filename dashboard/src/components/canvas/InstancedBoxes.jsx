@@ -34,10 +34,17 @@ export default function InstancedBoxes({ executionMatrix, animProgress, viewMode
       let stress = 0;
       for (let j = 0; j < executionMatrix.length; j++) {
         const other = executionMatrix[j];
-        if (i !== j && other.target_coordinate && box.target_coordinate) {
-          if (other.target_coordinate[1] > box.target_coordinate[1]) {
-            const dx = Math.abs(other.target_coordinate[0] - box.target_coordinate[0]);
-            const dz = Math.abs(other.target_coordinate[2] - box.target_coordinate[2]);
+        if (i !== j && other.target_coordinate && box.target_coordinate && other.size && box.size) {
+          if (other.target_coordinate[1] >= box.target_coordinate[1] + box.size[1] - 0.01) {
+            const centerX1 = box.target_coordinate[0] + box.size[0] / 2;
+            const centerZ1 = box.target_coordinate[2] + box.size[2] / 2;
+            const centerX2 = other.target_coordinate[0] + other.size[0] / 2;
+            const centerZ2 = other.target_coordinate[2] + other.size[2] / 2;
+
+            const dx = Math.abs(centerX1 - centerX2);
+            const dz = Math.abs(centerZ1 - centerZ2);
+            
+            // Check for AABB intersection in the XZ plane (top-down view)
             if (dx < (box.size[0] + other.size[0]) / 2 && dz < (box.size[2] + other.size[2]) / 2) {
               stress += other.size[0] * other.size[1] * other.size[2];
             }

@@ -159,10 +159,19 @@ func (o *Orchestrator) ProcessPackagingRequest(imageBytes []byte, filename strin
 		if exists {
 			step.ID = lookupID
 			
-			// Size in Three.js world units
-			sizeX := item.Dimensions.Length * scale
-			sizeY := item.Dimensions.Height * scale
-			sizeZ := item.Dimensions.Width * scale
+			// Size in Three.js world units. 
+			// If the C++ engine performed a rotation, the rotated L, W, H bounds will be returned in TargetCoordinates!
+			// If missing (e.g. from Go fallback), we default to the original unrotated item dimensions.
+			finalL := step.TargetCoordinates.L
+			if finalL == 0 { finalL = item.Dimensions.Length }
+			finalW := step.TargetCoordinates.W
+			if finalW == 0 { finalW = item.Dimensions.Width }
+			finalH := step.TargetCoordinates.H
+			if finalH == 0 { finalH = item.Dimensions.Height }
+
+			sizeX := finalL * scale
+			sizeY := finalH * scale // C++ H maps to Three.js Y
+			sizeZ := finalW * scale // C++ W maps to Three.js Z
 			step.Size = []float64{sizeX, sizeY, sizeZ}
 			
 			// Source coordinate (staging area, outside the container)
