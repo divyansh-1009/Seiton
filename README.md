@@ -17,6 +17,7 @@ Seiton delivers a fully autonomous solution that optimizes the end-to-end contai
 * **Autonomous 3D Space Optimization**: Calculates optimal, coordinate-based placements for heterogeneous cargo boxes inside a container, maximizing volume utilization.
 * **Computer Vision Cargo Ingestion**: Extracts physical dimensions (length and width) from raw 2D top-down images of cargo staging areas using OpenCV.
 * **Interactive 3D Digital Twin**: Animates the sequence of packing steps in a WebGL-powered environment, showing box orientations, structural stress indicators, and placement order.
+* **Incremental Live Perception**: An animated overhead crane equipped with a downward-facing perception camera module visually conveys the real-time scanning process. It "captures" the physical dimensions of a newly detected object on the fly, routing it through the C++ engine to calculate its mathematically perfect resting place atop an already partially-filled container.
 * **Low-Latency Architecture**: Runs a compiled C++17 optimization binary directly from a Go microservice API via high-speed subprocess pipes, delivering calculations in milliseconds.
 
 ---
@@ -103,10 +104,10 @@ Open `http://localhost:5173` in your browser.
 
 ## Usage
 
-1. **Select Packing Mode**: Click on either **Bulk Mode** (runs an entirely programmatic test with N random boxes) or **Incremental Mode** (uses computer vision to read box dimensions from a photo).
+1. **Select Packing Mode**: Click on either **Bulk Mode** (generates and packs a predefined number of random boxes simultaneously to simulate maximum container density) or **Incremental Mode** (uses computer vision to extract items from a camera feed and pack them sequentially onto a baseline of pre-filled boxes).
 2. **Input Parameters**: Define the metric dimensions ($L \times W \times H$ in cm) of your target container.
-3. **Process**: In Incremental Mode, drag and drop an image of your boxes. In Bulk Mode, set the quantity to generate.
-4. **View digital twin**: Click **Generate**. Interact with the 3D canvas (rotate, pan, zoom) to watch the box placement animation step-by-step. Toggle between **Assembly View** and **Stress View** to analyze cargo loading integrity.
+3. **Process**: In Incremental Mode, upload an image of your boxes. In Bulk Mode, set the quantity to generate.
+4. **View digital twin**: Click **Generate**. Interact with the 3D canvas (rotate, pan, zoom) to watch the box placement animation step-by-step. In Incremental Mode, you can manually scrub the timeline slider to control the robotic crane as its perception camera scans the object before dropping it perfectly into its calculated target coordinate. Toggle between **Assembly View** and **Stress View** to analyze cargo loading integrity.
 
 ---
 
